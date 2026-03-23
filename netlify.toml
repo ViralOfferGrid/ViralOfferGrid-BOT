@@ -1,0 +1,9 @@
+[build]
+  functions = "netlify/functions"
+  command = "echo 'No build step needed'"
+
+[build.environment]
+  PYTHON_VERSION = "3.11"
+
+[functions]
+  node_bundler = "none"

@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>BD ToolX - Posts</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', sans-serif; background: #0f0f1a; color: #e0e0e0; min-height: 100vh; }
+    header { background: #1a1a2e; padding: 18px 24px; display: flex; align-items: center; gap: 12px; border-bottom: 2px solid #7c3aed; }
+    header h1 { font-size: 1.4rem; color: #a78bfa; }
+    header span { font-size: 0.85rem; color: #888; margin-left: auto; }
+    #app { max-width: 720px; margin: 28px auto; padding: 0 16px; }
+    .post-card { background: #1a1a2e; border: 1px solid #2d2d4e; border-radius: 12px; padding: 18px; margin-bottom: 16px; transition: border-color 0.2s; }
+    .post-card:hover { border-color: #7c3aed; }
+    .post-meta { font-size: 0.75rem; color: #666; margin-bottom: 10px; }
+    .post-text { font-size: 0.97rem; line-height: 1.6; white-space: pre-wrap; word-break: break-word; }
+    .post-text a { color: #a78bfa; text-decoration: none; }
+    .post-text a:hover { text-decoration: underline; }
+    .url-chips { margin-top: 12px; display: flex; flex-wrap: wrap; gap: 8px; }
+    .chip { background: #2d1f5e; color: #c4b5fd; font-size: 0.75rem; padding: 4px 10px; border-radius: 20px; max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .loading { text-align: center; padding: 60px; color: #666; }
+    .empty { text-align: center; padding: 60px; color: #555; }
+    .refresh-btn { display: block; margin: 0 auto 24px; background: #7c3aed; color: white; border: none; padding: 10px 24px; border-radius: 8px; cursor: pointer; font-size: 0.9rem; }
+    .refresh-btn:hover { background: #6d28d9; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>📡 BD ToolX Posts</h1>
+    <span id="last-updated"></span>
+  </header>
+  <div id="app">
+    <p class="loading">লোড হচ্ছে...</p>
+  </div>
+
+  <script>
+    // ✅ আপনার GitHub username ও repo নাম এখানে দিন
+    const GITHUB_USER = "bdtoolxmedia";
+    const GITHUB_REPO = "bdtoolxpost_bot";
+    const POSTS_URL = `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/main/posts.json`;
+
+    async function loadPosts() {
+      const app = document.getElementById("app");
+      try {
+        const res = await fetch(POSTS_URL + "?t=" + Date.now());
+        if (!res.ok) throw new Error("পোস্ট লোড হয়নি");
+        const posts = await res.json();
+        document.getElementById("last-updated").textContent =
+          "আপডেট: " + new Date().toLocaleTimeString("bn-BD");
+
+        if (!posts.length) {
+          app.innerHTML = `<p class="empty">এখনো কোনো পোস্ট নেই।</p>`;
+          return;
+        }
+
+        app.innerHTML = `<button class="refresh-btn" onclick="loadPosts()">🔄 রিফ্রেশ</button>` +
+          posts.map(p => {
+            const linkified = p.text.replace(
+              /(https?:\/\/[^\s]+)/g,
+              '<a href="$1" target="_blank" rel="noopener">$1</a>'
+            );
+            const chips = (p.short_urls || []).map(u =>
+              `<span class="chip" title="${u.short}">${u.short}</span>`
+            ).join("");
+            return `
+              <div class="post-card">
+                <div class="post-meta">🕐 ${p.date || ""}</div>
+                <div class="post-text">${linkified}</div>
+                ${chips ? `<div class="url-chips">${chips}</div>` : ""}
+              </div>`;
+          }).join("");
+      } catch (e) {
+        app.innerHTML = `<p class="empty">❌ পোস্ট লোড করতে সমস্যা হয়েছে।<br><small>${e.message}</small></p>
+          <button class="refresh-btn" onclick="loadPosts()">আবার চেষ্টা করুন</button>`;
+      }
+    }
+
+    loadPosts();
+    // প্রতি ৬০ সেকেন্ডে অটো-রিফ্রেশ
+    setInterval(loadPosts, 60000);
+  </script>
+</body>
+</html>
